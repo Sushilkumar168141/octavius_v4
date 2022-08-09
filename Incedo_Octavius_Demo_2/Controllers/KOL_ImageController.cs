@@ -18,6 +18,7 @@ namespace Incedo_Octavius_Demo_2.Controllers
         ProfileStatusModel model = new ProfileStatusModel();
         List<ProfileStatusModel> profiles = new List<ProfileStatusModel>();
 
+        int chosenProfileID;
         List<int> KOL_Count = new List<int>();
 
         [ChildActionOnly]
@@ -29,34 +30,11 @@ namespace Incedo_Octavius_Demo_2.Controllers
         // GET: ProfileStatus
         public ActionResult ProfileIndex()
         {
-            
+            Console.WriteLine("Inside profileIndex");
             //KOL_With_Degree_List kolList = new KOL_With_Degree_List();
             string constr = ConfigurationManager.ConnectionStrings["Incedo_Octavius_Demo_2_kol_table_Context"].ConnectionString;
-            using (MySqlConnection con = new MySqlConnection(constr))
-            {
-                string query = "SELECT * FROM octavius_db.profile_status_master_table order by ProfileStatusID desc";
-                using (MySqlCommand cmd = new MySqlCommand(query))
-                {
-                    cmd.Connection = con;
-                    con.Open();
-                    using (MySqlDataReader sdr = cmd.ExecuteReader())
-                    {
-                        while (sdr.Read())
-                        {
-                            //string name = sdr["first_name"].ToString();
-
-                            profiles.Add(new ProfileStatusModel
-                            {
-                                ProfileStatusID = Convert.ToInt32(sdr["ProfileStatusID"]),
-                                ProfileStatus = sdr["ProfleStatus"].ToString(),
-                                
-                            });
-
-                        }
-                    }
-                    con.Close();
-                }
-            }
+            GetProfiles();
+            
 
             for (int i = profiles.Count; i > 0; i--)
             {
@@ -89,6 +67,7 @@ namespace Incedo_Octavius_Demo_2.Controllers
 
                 }
             }
+            
             ViewBag.KOLCount = KOL_Count;
             return View(profiles);
         }
@@ -96,8 +75,15 @@ namespace Incedo_Octavius_Demo_2.Controllers
         // GET: KOL_Image
         public ActionResult Index()
         {
+            Console.WriteLine("Inside Index GEt");
+            int profile = 2;
             List<KOL_Image> kolNameImageList = new List<KOL_Image>();
             string constr = ConfigurationManager.ConnectionStrings["Incedo_Octavius_Demo_2_kol_table_Context"].ConnectionString;
+            GetProfiles();
+            SetProfileId(profile);
+            ViewBag.Profiles = profiles;
+            ViewBag.Profile = profiles[chosenProfileID].ProfileStatus;
+            //chosenProfileID = profile;
             // Stored Procedures
             using (MySqlConnection dbConnection = new MySqlConnection(constr))
             {
@@ -108,7 +94,7 @@ namespace Incedo_Octavius_Demo_2.Controllers
                     cmd.Connection = dbConnection;
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.CommandText = "KOL_Name_Image";
-                    cmd.Parameters.AddWithValue("profileStatus",2);
+                    cmd.Parameters.AddWithValue("profileStatus",profile);
                     //cmd.ExecuteReader();
 
                     MySqlDataAdapter dataAdapter = new MySqlDataAdapter(cmd);
@@ -136,15 +122,22 @@ namespace Incedo_Octavius_Demo_2.Controllers
                 }
 
             }
-
+            //profiles = ViewBag.Profiles;
+            //ViewBag.Profile = profiles[chosenProfileID].ProfileStatus;
             return View(kolNameImageList);
         }
 
         [HttpPost]
         public ActionResult Index(int profile)
         {
+            Console.WriteLine("Inside index post");
             List<KOL_Image> kolNameImageList = new List<KOL_Image>();
             string constr = ConfigurationManager.ConnectionStrings["Incedo_Octavius_Demo_2_kol_table_Context"].ConnectionString;
+            GetProfiles();
+            SetProfileId(profile);
+            ViewBag.Profiles = profiles;
+            ViewBag.Profile = profiles[chosenProfileID].ProfileStatus;
+            //chosenProfileID = profile;
             // Stored Procedures
             using (MySqlConnection dbConnection = new MySqlConnection(constr))
             {
@@ -183,9 +176,54 @@ namespace Incedo_Octavius_Demo_2.Controllers
                 }
 
             }
-
+            //profiles = ViewBag.Profiles;
+            //ViewBag.Profile = profiles[chosenProfileID].ProfileStatus;
             return View(kolNameImageList);
         }
+         
+        public void GetProfiles()
+        {
+            string constr = ConfigurationManager.ConnectionStrings["Incedo_Octavius_Demo_2_kol_table_Context"].ConnectionString;
+            List<ProfileStatusModel> innerProfiles = new List<ProfileStatusModel>();
+            using (MySqlConnection con = new MySqlConnection(constr))
+            {
+                string query = "SELECT * FROM octavius_db.profile_status_master_table order by ProfileStatusID desc";
+                using (MySqlCommand cmd = new MySqlCommand(query))
+                {
+                    cmd.Connection = con;
+                    con.Open();
+                    using (MySqlDataReader sdr = cmd.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            //string name = sdr["first_name"].ToString();
 
+                            innerProfiles.Add(new ProfileStatusModel
+                            {
+                                ProfileStatusID = Convert.ToInt32(sdr["ProfileStatusID"]),
+                                ProfileStatus = sdr["ProfleStatus"].ToString(),
+
+                            });
+
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            profiles = innerProfiles;
+        }
+
+        public void SetProfileId(int id)
+        {
+            if(id==0)
+            {
+                id = 2;
+            }
+            else if(id==2)
+            {
+                id = 0;
+            }
+            chosenProfileID = id;
+        }
     }
 }
